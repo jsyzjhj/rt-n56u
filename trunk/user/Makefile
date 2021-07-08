@@ -23,9 +23,10 @@ STORAGE_ENABLED=n
 OPENSSH_ENABLED=n
 DROPBEAR_ENABLED=n
 SAMBA_ENABLED=n
-ARIA2_ENABLED=n
 SOFTETHERVPN_ENABLE=n
 SHADOWSOCKS_ENABLE=n
+FRP_ENABLE=n
+TROJAN_ENABLE=n
 
 ifneq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSH),y)
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_DROPBEAR),y)
@@ -73,16 +74,20 @@ SAMBA_ENABLED=y
 endif
 endif
 
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_ARIA),y)
-ARIA2_ENABLED=y
-endif
-
 ifneq ($(filter y,$(CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CMD) $(CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CLIENT) $(CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_SERVER)),)
 SOFTETHERVPN_ENABLE=y
 endif
 
 ifneq ($(filter y,$(CONFIG_FIRMWARE_INCLUDE_SSSERVER) $(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS)),)
 SHADOWSOCKS_ENABLE=y
+endif
+
+ifneq ($(filter y,$(CONFIG_FIRMWARE_INCLUDE_FRPC) $(CONFIG_FIRMWARE_INCLUDE_FRPS)),)
+FRP_ENABLE=y
+endif
+
+ifneq ($(filter y,$(CONFIG_FIRMWARE_INCLUDE_WING) $(CONFIG_FIRMWARE_INCLUDE_TROJAN)),)
+TROJAN_ENABLE=y
 endif
 
 dir_y =
@@ -107,6 +112,7 @@ dir_y						+= networkmap
 dir_y						+= httpd
 dir_y						+= www
 dir_y						+= rc
+dir_$(CONFIG_FIRMWARE_INCLUDE_ANTFS)		+= antfs
 dir_$(CONFIG_FIRMWARE_INCLUDE_NAPT66)		+= napt66
 dir_$(CONFIG_FIRMWARE_INCLUDE_SFE)		+= shortcut-fe
 dir_y						+= infosvr
@@ -125,6 +131,7 @@ dir_y						+= xl2tpd
 dir_$(CONFIG_FIRMWARE_INCLUDE_RPL2TP)		+= rp-l2tp
 dir_y						+= lldt
 dir_y						+= scripts
+dir_$(CONFIG_FIRMWARE_INCLUDE_SMARTDNS)	+= smartdns
 dir_$(OPENSSH_ENABLED)				+= openssh
 dir_$(DROPBEAR_ENABLED)				+= dropbear
 dir_$(CONFIG_FIRMWARE_INCLUDE_HTOP)		+= htop
@@ -136,13 +143,20 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_TCPDUMP)		+= tcpdump
 dir_$(CONFIG_FIRMWARE_INCLUDE_MTR)		+= mtr
 dir_$(CONFIG_FIRMWARE_INCLUDE_SOCAT)	+= socat
 dir_$(CONFIG_FIRMWARE_INCLUDE_SRELAY)	+= srelay
+dir_$(CONFIG_FIRMWARE_INCLUDE_TUNSAFE) += tunsafe
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_WIREGUARD),y)
+dir_y += wireguard-go
+dir_y += wireguard-tools
+endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SMBD36),y)
 dir_$(SAMBA_ENABLED)				+= samba36
+dir_y							+= wsdd2
 else
 dir_$(SAMBA_ENABLED)				+= samba3
 endif
 dir_$(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS)	+= chnroute
 dir_$(CONFIG_FIRMWARE_INCLUDE_TTYD)		+= ttyd
+dir_$(FRP_ENABLE)				+= frp
 dir_$(SOFTETHERVPN_ENABLE)			+= softethervpn
 dir_$(CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT)         += scutclient
 dir_$(CONFIG_FIRMWARE_INCLUDE_VLMCSD)			+= vlmcsd
@@ -154,6 +168,15 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_DOGCOM)			+= dogcom
 dir_$(CONFIG_FIRMWARE_INCLUDE_IPERF3)			+= iperf3
 dir_$(CONFIG_FIRMWARE_INCLUDE_MINIEAP)			+= minieap
 dir_$(CONFIG_FIRMWARE_INCLUDE_NJIT_CLIENT)		+= njit-client
+dir_$(CONFIG_FIRMWARE_INCLUDE_MENTOHUST)		+= mentohust
+dir_$(CONFIG_FIRMWARE_INCLUDE_xTUN) 			+= xTun
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_WING),y)
+dir_y 			+= wing
+dir_y 			+= ipt2socks
+endif
+dir_$(TROJAN_ENABLE) 			+= trojan
+dir_$(CONFIG_FIRMWARE_INCLUDE_REDSOCKS)			+= redsocks
+dir_$(CONFIG_FIRMWARE_INCLUDE_3PROXY)			+= 3proxy
 
 ifdef CONFIG_BLK_DEV_SD
 dir_$(CONFIG_FIRMWARE_INCLUDE_HDPARM)		+= hdparm
@@ -170,7 +193,10 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_DUMP1090)	+= dump1090
 endif
 
 ifeq ($(STORAGE_ENABLED),y)
-dir_y						+= nfsd
+dir_$(CONFIG_FIRMWARE_INCLUDE_NFSD)		+= nfs-utils
+ifneq (,$(filter y,$(CONFIG_FIRMWARE_INCLUDE_NFSD) $(CONFIG_FIRMWARE_INCLUDE_NFSC)))
+dir_y						+= rpcbind
+endif
 dir_y						+= optware
 dir_y						+= util-linux
 dir_$(FS_EXT_ENABLED)				+= e2fsprogs
@@ -181,7 +207,7 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_FTPD)		+= vsftpd
 dir_$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)		+= minidlna
 dir_$(CONFIG_FIRMWARE_INCLUDE_FIREFLY)		+= firefly
 dir_$(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION)	+= transmission
-dir_$(ARIA2_ENABLED)		+= aria2
+dir_$(CONFIG_FIRMWARE_INCLUDE_ARIA)		+= aria2
 endif
 
 ifdef CONFIG_MTD_UBI

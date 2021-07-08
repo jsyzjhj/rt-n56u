@@ -972,9 +972,10 @@ ipt_filter_rules(char *man_if, char *wan_if, char *lan_if, char *lan_ip,
 				
 				if (i_vpns_ov_mode == 0)
 					i_need_vpnlist = 0;
-				if (i_ov_prot == 1 || i_ov_prot == 3)
+				if (i_ov_prot == 1 || i_ov_prot == 3 || i_ov_prot == 5)
 					ov_prot = "tcp";
-				fprintf(fp, "-A %s -p %s --dport %d -j %s\n", dtype, ov_prot, i_ov_port, logaccept);
+				if (i_ov_prot == 0 || i_ov_prot == 1 || i_ov_prot == 4 || i_ov_prot == 5)
+					fprintf(fp, "-A %s -p %s --dport %d -j %s\n", dtype, ov_prot, i_ov_port, logaccept);
 			} else
 #endif
 			if (i_vpns_type == 1) {
@@ -1281,12 +1282,19 @@ ipt_mangle_rules(const char *man_if, const char *wan_if, int use_man)
 {
 	FILE *fp;
 	int i_wan_ttl_fix;
+	int i_wan_ttl_value;
 	const char *dtype;
 	const char *ipt_file = "/tmp/ipt_mangle.rules";
 
 	i_wan_ttl_fix = nvram_get_int("wan_ttl_fix");
+	i_wan_ttl_value = nvram_get_int("wan_ttl_value");
+
 	if (i_wan_ttl_fix == 2 && nvram_invmatch("mr_enable_x", "1"))
 		i_wan_ttl_fix = 0;
+
+	if (i_wan_ttl_value > 1) {
+			fput_int("/proc/sys/net/ipv4/ip_default_ttl", i_wan_ttl_value);
+	}
 
 	if (i_wan_ttl_fix) {
 		module_smart_load("iptable_mangle", NULL);
@@ -1500,9 +1508,10 @@ ip6t_filter_rules(char *man_if, char *wan_if, char *lan_if,
 				int i_ov_port = nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535);
 				int i_ov_prot = nvram_get_int("vpns_ov_prot");
 				
-				if (i_ov_prot == 1 || i_ov_prot == 3)
+				if (i_ov_prot == 1 || i_ov_prot == 3 || i_ov_prot == 5)
 					ov_prot = "tcp";
-				fprintf(fp, "-A %s -p %s --dport %d -j %s\n", dtype, ov_prot, i_ov_port, logaccept);
+				if (i_ov_prot == 2 || i_ov_prot == 3 || i_ov_prot == 4 || i_ov_prot == 5)
+					fprintf(fp, "-A %s -p %s --dport %d -j %s\n", dtype, ov_prot, i_ov_port, logaccept);
 			} else
 #endif
 			if (i_vpns_type == 1) {
@@ -1704,22 +1713,8 @@ ip6t_mangle_rules(char *man_if)
 static void
 ip6t_disable_filter(void)
 {
-	FILE *fp;
-	const char *ipt_file = "/tmp/ip6t_disable_filter.rules";
-
-	if (!(fp=fopen(ipt_file, "w")))
-		return;
-
-	fprintf(fp, "*%s\n", "filter");
-	fprintf(fp, ":%s %s [0:0]\n", "INPUT", "ACCEPT");
-	fprintf(fp, ":%s %s [0:0]\n", "FORWARD", "ACCEPT");
-	fprintf(fp, ":%s %s [0:0]\n", "OUTPUT", "ACCEPT");
-	fprintf(fp, "-F\n");
-
-	fprintf(fp, "COMMIT\n\n");
-	fclose(fp);
-
-	doSystem("ip6tables-restore %s", ipt_file);
+	doSystem("ip6tables -P FORWARD ACCEPT");
+	doSystem("ip6tables -F FORWARD");
 }
 #endif
 #endif
